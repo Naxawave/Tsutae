@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restablecer Contraseña - Tsutae</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: #202020;
+            border: 1px solid #202020;
+            padding: 40px;
+            border-radius: 32px;
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        h2 {
+            color: #84e984;
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        p {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+            font-weight: 400;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            color: #ccc;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 14px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 24px;
+            font-size: 16px;
+            color: #fff;
+            font-family: 'Poppins', sans-serif;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #84e984;
+        }
+        
+        input::placeholder {
+            color: #555;
+        }
+        
+        button {
+            width: 100%;
+            padding: 16px;
+            background: #84e984;
+            color: #000;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+        }
+        
+        .message.error {
+            background: #1a0000;
+            color: #ff4444;
+            border: 1px solid #330000;
+        }
+        
+        .message.success {
+            background: #001a00;
+            color: #84e984;
+            border: 1px solid #003300;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Restablecer Contraseña</h2>
+        <p>Ingresa tu nueva contraseña para tu cuenta de Tsutae</p>
+        
+        <div id="message" class="message"></div>
+        
+        <div class="input-group">
+            <label for="password">Nueva Contraseña</label>
+            <input type="password" id="password" placeholder="Mínimo 6 caracteres">
+        </div>
+        
+        <div class="input-group">
+            <label for="confirmPassword">Confirmar Contraseña</label>
+            <input type="password" id="confirmPassword" placeholder="Repite tu contraseña">
+        </div>
+        
+        <button onclick="resetPassword()" id="resetBtn">Restablecer Contraseña</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const { createClient } = supabase;
+        const supabaseClient = createClient(
+            'https://bflgntftwewypucorzdk.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmbGdudGZ0d2V3eXB1Y29yemRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMDQ0MjEsImV4cCI6MjA3ODY4MDQyMX0.NAUe7rxPipe7rFhMbCoO4JrG6jUoNs008RSoyPioJBc'
+        );
+
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = 'message ' + type;
+            msg.style.display = 'block';
+        }
+
+        async function resetPassword() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const btn = document.getElementById('resetBtn');
+
+            if (!password || !confirmPassword) {
+                showMessage('Por favor completa todos los campos', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showMessage('La contraseña debe tener al menos 6 caracteres', 'error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showMessage('Las contraseñas no coinciden', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Actualizando...';
+
+            try {
+                const { error } = await supabaseClient.auth.updateUser({
+                    password: password
+                });
+
+                if (error) {
+                    showMessage('Error: ' + error.message, 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Restablecer Contraseña';
+                } else {
+                    showMessage('¡Contraseña actualizada exitosamente!', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'com.naxawave.tsutae://login-callback';
+                    }, 2000);
+                }
+            } catch (e) {
+                showMessage('Error inesperado: ' + e.message, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Restablecer Contraseña';
+            }
+        }
+
+        document.getElementById('password').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') resetPassword();
+        });
+        
+        document.getElementById('confirmPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') resetPassword();
+        });
+    </script>
+</body>
+</html>
